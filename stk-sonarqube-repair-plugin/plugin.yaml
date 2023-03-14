@@ -1,0 +1,19 @@
+name: stk-sonarqube-repair-plugin
+description: A stk plugin that automatically repairs SonarQube warnnings
+display-name: stk-sonarqube-repair-plugin
+picture: plugin.png
+category: backend # Ref: https://docs.stackspot.com/docs/create-stacks/yaml-files/plugin/#category
+compatibility:
+  - java
+about: docs/about.md
+usage: docs/usage.md
+use-case: docs/use-case.md
+implementation: docs/implementation.md
+technologies: # Ref: https://docs.stackspot.com/docs/create-stacks/yaml-files/yaml/#technologies
+  - "Api"
+types:
+  - app
+hooks:
+- type: run-script
+  trigger: before-render
+  script: script.py
