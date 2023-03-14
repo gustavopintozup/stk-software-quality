@@ -6,27 +6,27 @@ def run(metadata: Metadata = None):
     target_project = str(metadata.target_path)
     output_file = "output.json"
 
-    def limpar_arquivos_temporarios():
+    def clean_temp_files():
         from os.path import exists
 
         if exists(output_file):
             os.remove(output_file)
 
-    def encontar_jar_sorald():
+    def find_sorald_jar():
         import glob
         home = os.path.expanduser('~')
 
         for file in glob.glob(home + "/.stk/stacks/*/stk-sonarqube-repair-plugin/sorald.jar"):
             return os.path.abspath(file)
 
-    def rodar_comando_java(parametros):
-        sorald_dir = encontar_jar_sorald()
+    def run_java_cmd(parametros):
+        sorald_dir = find_sorald_jar()
 
-        comando_java = ["java", "-jar", sorald_dir]
-        comando_java.extend(parametros)
+        java_cmd = ["java", "-jar", sorald_dir]
+        java_cmd.extend(parametros)
 
         import subprocess
-        result = subprocess.run(comando_java,
+        result = subprocess.run(java_cmd,
                         stdin=subprocess.DEVNULL,
                         stdout=subprocess.PIPE,
                         stderr=subprocess.PIPE,
@@ -35,10 +35,10 @@ def run(metadata: Metadata = None):
 
     print("Searching for SonarQube violations..")
 
-    instrucao_de_violacoes = ["mine", "--source", target_project,
+    violated_rules = ["mine", "--source", target_project,
                             "--handled-rules", "--stats-output-file", output_file]
 
-    result = rodar_comando_java(instrucao_de_violacoes)
+    result = run_java_cmd(violated_rules)
 
     if result.stderr == "":
         import json
@@ -55,17 +55,17 @@ def run(metadata: Metadata = None):
             ).ask()
 
             if vai_reparar == "Yes":
-                lista_de_violacoes = [v['ruleKey'] + ": " + v['ruleName'] for v in violations_found]
-                violacoes_para_reparar = questionary.checkbox("Check a violation", choices=lista_de_violacoes).ask()
+                list_of_violations = [v['ruleKey'] + ": " + v['ruleName'] for v in violations_found]
+                violations_to_repair = questionary.checkbox("Check a violation", choices=list_of_violations).ask()
 
-                for violacao in violacoes_para_reparar:
-                    violacao = violacao.split(": ")[0]
-                    instrucao_de_reparo = ["repair", "--source", target_project, "--rule-key", violacao]
+                for violation in violations_to_repair:
+                    violation = violation.split(": ")[0]
+                    repair_instruction = ["repair", "--source", target_project, "--rule-key", violation]
 
-                    print("Repairing violation %s" % violacao)
-                    rodar_comando_java(instrucao_de_reparo)
+                    print("Repairing violation %s" % violation)
+                    run_java_cmd(repair_instruction)
 
-        limpar_arquivos_temporarios()
+        clean_temp_files()
     else:
         for item in result.stderr.split("\n"):
            print(item)
